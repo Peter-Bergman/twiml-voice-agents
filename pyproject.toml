@@ -1,0 +1,17 @@
+[build-system]
+requires = ["flit_core >= 3.2"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "twiml-voice-agents"
+authors = [{name = "Peter Bergman", email = "peterbergman8253@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.14"
+dynamic = ["version", "description"]
+dependencies = [
+    "claudette",
+    "fastapi[standard]",
+    "squareup",
+    "twilio",
+    "pyngrok"
+]
