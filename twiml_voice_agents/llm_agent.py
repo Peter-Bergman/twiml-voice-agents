@@ -7,7 +7,12 @@ class LLMAgent(VirtualAgent, Chat):
     max_non_replies: int = 3
 
     def __init__(self: Self, system_prompt: str = "", *args, **kwargs):
-        super().__init__(sp=system_prompt, *args, **kwargs)
+        super().__init__(
+            sp=system_prompt,
+            model="claude-haiku-4-5",
+            *args,
+            **kwargs
+        )
 
 
     def get_next_response(self: Self, user_input: str) -> str:
