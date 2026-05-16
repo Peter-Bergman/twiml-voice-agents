@@ -21,3 +21,10 @@ class VirtualAgent(ABC):
     @abstractmethod
     def get_next_response(self: Self, user_input: str) -> str:
         ...
+
+    @abstractmethod
+    def handle_silence(self: Self) -> str:
+        """
+        Used to handle occasions where users do not respond/reply for a period of time
+        """
+        ...

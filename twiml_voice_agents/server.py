@@ -9,6 +9,10 @@ from twilio.twiml.voice_response import VoiceResponse, Gather
 from typing import List, Self
 import uvicorn
 
+call_route = "/call"
+respond_route = "/respond"
+silence_route = "/handle_silence"
+
 class Server(FastAPI):
     conversations: List[VirtualAgent] = {}
 
@@ -17,7 +21,7 @@ class Server(FastAPI):
 
         app = self # sticking to naming conventions
 
-        @app.post("/call")
+        @app.post(call_route)
         async def call(From: str = Form(...), ForwardedFrom: str | None = Form(None), To: str = Form(...), CallSid: str = Form(...)):
             conversation = voice_agent_type(
                 from_num=From,
@@ -32,10 +36,11 @@ class Server(FastAPI):
             gather = Gather(input="speech", action="/respond", method="POST")
             gather.say(conversation.opening_line)
             response.append(gather)
+            response.redirect(silence_route, method="POST")
             print(str(response))
             return Response(content=str(response), media_type="application/xml")
 
-        @app.post("/respond")
+        @app.post(respond_route)
         async def respond(SpeechResult: str = Form(...), CallSid: str = Form(...)):
             print("SpeechResult:", SpeechResult)
             conversation: VirtualAgent = self.conversations[CallSid]
@@ -46,8 +51,24 @@ class Server(FastAPI):
 
             gather.say(response_text)
             response.append(gather)
+            response.redirect(silence_route, method="POST")
             print(str(response))
             return Response(content=str(response), media_type="application/xml")
+
+        @app.post(silence_route)
+        async def handle_silence(CallSid: str = Form(...)):
+            conversation: VirtualAgent = self.conversations[CallSid]
+            response_text = conversation.handle_silence()
+
+            response = VoiceResponse()
+            gather = Gather(input="speech", action="/respond", method="POST", speechTimeout="2", timeout="3")
+
+            gather.say(response_text)
+            response.append(gather)
+            response.redirect(silence_route, method="POST")
+            print(str(response))
+            return Response(content=str(response), media_type="application/xml")
+
 
     async def run_async(self: Self):
         ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
