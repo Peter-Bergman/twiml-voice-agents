@@ -1,5 +1,5 @@
 # from agent import Conversation
-from agent import VirtualAgent
+from .agent import VirtualAgent
 import asyncio
 from fastapi import FastAPI, Form
 from fastapi.responses import Response

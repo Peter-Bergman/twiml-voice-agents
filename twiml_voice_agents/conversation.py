@@ -1,6 +1,6 @@
-from agent import VirtualAgent
+from .agent import VirtualAgent
 from claudette import *
-from square_client import SquareClient
+from .square_client import SquareClient
 from typing import Self
 
 class Conversation(VirtualAgent, Chat):
