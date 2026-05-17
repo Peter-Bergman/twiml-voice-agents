@@ -6,7 +6,14 @@ from typing import Self
 class Conversation(VirtualAgent, Chat):
     square_client: SquareClient
 
-    def __init__(self: Self, from_num: str, forwarded_from_num: str | None, to_num: str, call_sid: str, system_prompt: str = ''):
+    def __init__(
+        self: Self,
+        from_num: str,
+        forwarded_from_num: str | None,
+        to_num: str,
+        call_sid: str,
+        system_prompt: str = ''
+    ):
         self.square_client = SquareClient(from_num)
 
         super().__init__(

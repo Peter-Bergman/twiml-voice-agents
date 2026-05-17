@@ -6,14 +6,22 @@ class LLMAgent(VirtualAgent, Chat):
     non_replies_in_a_row: int = 0
     max_non_replies: int = 3
 
-    def __init__(self: Self, system_prompt: str = "", *args, **kwargs):
+    def __init__(
+        self: Self,
+        from_num: str,
+        forwarded_from_num: str | None,
+        to_num: str,
+        call_sid: str,
+        system_prompt: str = "",
+        *args,
+        **kwargs
+    ):
         super().__init__(
             sp=system_prompt,
             model="claude-haiku-4-5",
             *args,
             **kwargs
         )
-
 
     def get_next_response(self: Self, user_input: str) -> str:
         """

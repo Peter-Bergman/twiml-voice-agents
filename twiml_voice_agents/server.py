@@ -15,9 +15,14 @@ silence_route = "/handle_silence"
 
 class Server(FastAPI):
     conversations: List[VirtualAgent] = {}
+    language: str = "en-US"
+    voice: str = "Man"
 
-    def __init__(self: Self, voice_agent_type: type[VirtualAgent], *args, **kwargs):
+    def __init__(self: Self, voice_agent_type: type[VirtualAgent], language: str = None, voice: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.language = language if language is not None else self.language
+        self.voice = voice if voice is not None else self.voice
 
         app = self # sticking to naming conventions
 
@@ -33,8 +38,8 @@ class Server(FastAPI):
             self.conversations[CallSid] = conversation
 
             response = VoiceResponse()
-            gather = Gather(input="speech", action="/respond", method="POST")
-            gather.say(conversation.opening_line)
+            gather = Gather(input="speech", language=self.language, action="/respond", method="POST")
+            gather.say(conversation.opening_line, language=self.language, voice=self.voice)
             response.append(gather)
             response.redirect(silence_route, method="POST")
             print(str(response))
@@ -47,9 +52,9 @@ class Server(FastAPI):
             response_text = conversation.get_next_response(SpeechResult)
 
             response = VoiceResponse()
-            gather = Gather(input="speech", action="/respond", method="POST", speechTimeout="2", timeout="3")
+            gather = Gather(input="speech", language=self.language, action="/respond", method="POST", speechTimeout="2", timeout="3")
 
-            gather.say(response_text)
+            gather.say(response_text, language=self.language, voice=self.voice)
             response.append(gather)
             response.redirect(silence_route, method="POST")
             print(str(response))
@@ -61,9 +66,9 @@ class Server(FastAPI):
             response_text = conversation.handle_silence()
 
             response = VoiceResponse()
-            gather = Gather(input="speech", action="/respond", method="POST", speechTimeout="2", timeout="3")
+            gather = Gather(input="speech", language=self.language, action="/respond", method="POST", speechTimeout="2", timeout="3")
 
-            gather.say(response_text)
+            gather.say(response_text, language=self.language, voice=self.voice)
             response.append(gather)
             response.redirect(silence_route, method="POST")
             print(str(response))
