@@ -1,5 +1,5 @@
 """A FastAPI server that acts as a TwiML voice agent"""
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 from .server import Server
 from .agent import VirtualAgent
