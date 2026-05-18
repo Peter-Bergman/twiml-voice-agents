@@ -5,8 +5,8 @@ from fastapi import FastAPI, Form
 from fastapi.responses import Response
 import os
 from pyngrok import ngrok
-from twilio.twiml.voice_response import VoiceResponse, Gather
-from typing import List, Self
+from twilio.twiml.voice_response import VoiceResponse, Gather, Say, SsmlProsody
+from typing import List, Self, Literal
 import uvicorn
 
 call_route = "/call"
@@ -17,12 +17,22 @@ class Server(FastAPI):
     conversations: List[VirtualAgent] = {}
     language: str = "en-US"
     voice: str = "Man"
+    speech_rate: str = "default"
 
-    def __init__(self: Self, voice_agent_type: type[VirtualAgent], language: str = None, voice: str = None, *args, **kwargs):
+    def __init__(
+        self: Self,
+        voice_agent_type: type[VirtualAgent],
+        language: str | None = None,
+        voice: str | None = None,
+        speech_rate: str | None = None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
 
         self.language = language if language is not None else self.language
         self.voice = voice if voice is not None else self.voice
+        self.speech_rate = speech_rate if speech_rate is not None else self.speech_rate
 
         app = self # sticking to naming conventions
 
@@ -38,8 +48,10 @@ class Server(FastAPI):
             self.conversations[CallSid] = conversation
 
             response = VoiceResponse()
+
             gather = Gather(input="speech", language=self.language, action="/respond", method="POST")
-            gather.say(conversation.opening_line, language=self.language, voice=self.voice)
+            gather.say(language=self.language, voice=self.voice).prosody(conversation.opening_line, rate=self.speech_rate)
+
             response.append(gather)
             response.redirect(silence_route, method="POST")
             print(str(response))
@@ -54,7 +66,7 @@ class Server(FastAPI):
             response = VoiceResponse()
             gather = Gather(input="speech", language=self.language, action="/respond", method="POST", speechTimeout="2", timeout="3")
 
-            gather.say(response_text, language=self.language, voice=self.voice)
+            gather.say(language=self.language, voice=self.voice).prosody(response_text, rate=self.speech_rate)
             response.append(gather)
             response.redirect(silence_route, method="POST")
             print(str(response))
@@ -68,7 +80,7 @@ class Server(FastAPI):
             response = VoiceResponse()
             gather = Gather(input="speech", language=self.language, action="/respond", method="POST", speechTimeout="2", timeout="3")
 
-            gather.say(response_text, language=self.language, voice=self.voice)
+            gather.say(language=self.language, voice=self.voice).prosody(response_text, rate=self.speech_rate)
             response.append(gather)
             response.redirect(silence_route, method="POST")
             print(str(response))
