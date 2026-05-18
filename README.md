@@ -4,7 +4,7 @@
 
 ## Installing
 
-Run `python3 -m pip install twiml-voice-agents==0.1.1`
+Run `python3 -m pip install twiml-voice-agents`
 
 ## Setup
 
