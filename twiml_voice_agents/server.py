@@ -5,13 +5,15 @@ from fastapi import FastAPI, Form
 from fastapi.responses import Response
 import os
 from pyngrok import ngrok
-from twilio.twiml.voice_response import VoiceResponse, Gather, Say, SsmlProsody
+from twilio.twiml.voice_response import VoiceResponse, Gather
+from twilio.twiml import TwiML
 from typing import List, Self, Literal
 import uvicorn
 
 call_route = "/call"
 respond_route = "/respond"
 silence_route = "/handle_silence"
+hang_up_route = "/hang_up"
 
 class Server(FastAPI):
     conversations: List[VirtualAgent] = {}
@@ -51,8 +53,8 @@ class Server(FastAPI):
 
             gather = Gather(input="speech", language=self.language, action="/respond", method="POST")
             gather.say(language=self.language, voice=self.voice).prosody(conversation.opening_line, rate=self.speech_rate)
-
             response.append(gather)
+
             response.redirect(silence_route, method="POST")
             print(str(response))
             return Response(content=str(response), media_type="application/xml")
@@ -61,31 +63,39 @@ class Server(FastAPI):
         async def respond(SpeechResult: str = Form(...), CallSid: str = Form(...)):
             print("SpeechResult:", SpeechResult)
             conversation: VirtualAgent = self.conversations[CallSid]
-            response_text = conversation.get_next_response(SpeechResult)
+            agent_response = conversation.get_next_response(SpeechResult)
 
-            response = VoiceResponse()
-            gather = Gather(input="speech", language=self.language, action="/respond", method="POST", speechTimeout="2", timeout="3")
+            response = self.build_voice_response_from_agent_response(agent_response)
 
-            gather.say(language=self.language, voice=self.voice).prosody(response_text, rate=self.speech_rate)
-            response.append(gather)
-            response.redirect(silence_route, method="POST")
             print(str(response))
             return Response(content=str(response), media_type="application/xml")
 
         @app.post(silence_route)
         async def handle_silence(CallSid: str = Form(...)):
             conversation: VirtualAgent = self.conversations[CallSid]
-            response_text = conversation.handle_silence()
+            agent_response = conversation.handle_silence()
 
-            response = VoiceResponse()
-            gather = Gather(input="speech", language=self.language, action="/respond", method="POST", speechTimeout="2", timeout="3")
-
-            gather.say(language=self.language, voice=self.voice).prosody(response_text, rate=self.speech_rate)
-            response.append(gather)
-            response.redirect(silence_route, method="POST")
+            response = self.build_voice_response_from_agent_response(agent_response)
             print(str(response))
             return Response(content=str(response), media_type="application/xml")
 
+        @app.post(hang_up_route)
+        async def hang_up(CallSid: str = Form(...)):
+            response = VoiceResponse()
+            response.hangup()
+            return Response(content=str(response), media_type="application/xml")
+
+    def build_voice_response_from_agent_response(self: Self, agent_response: str | TwiML) -> VoiceResponse:
+        response = VoiceResponse()
+        if isinstance(agent_response, TwiML):
+            response.append(agent_response)
+        elif isinstance(agent_response, str):
+            gather = Gather(input="speech", language=self.language, action=respond_route, method="POST", speechTimeout="2", timeout="3")
+            gather.say(language=self.language, voice=self.voice).prosody(agent_response, rate=self.speech_rate)
+            response.append(gather)
+
+            response.redirect(silence_route, method="POST")
+        return response
 
     async def run_async(self: Self):
         ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
@@ -98,9 +108,3 @@ class Server(FastAPI):
 
     def run(self: Self):
         asyncio.run(self.run_async())
-
-
-if __name__ == "__main__":
-    from conversation import Conversation
-    server = Server(Conversation)
-    server.run()

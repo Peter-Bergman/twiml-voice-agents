@@ -1,8 +1,8 @@
 """A FastAPI server that acts as a TwiML voice agent"""
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 from .server import Server
 from .agent import VirtualAgent
-from .conversation import Conversation
 from .llm_agent import LLMAgent
+from .square_scheduling_agent import SquareSchedulingAgent
 from .square_client import SquareClient

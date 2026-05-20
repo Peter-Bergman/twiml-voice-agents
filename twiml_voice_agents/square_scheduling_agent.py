@@ -1,9 +1,11 @@
-from .agent import VirtualAgent
+from .llm_agent import LLMAgent
 from claudette import *
 from .square_client import SquareClient
+
 from typing import Self
 
-class Conversation(VirtualAgent, Chat):
+
+class SquareSchedulingAgent(LLMAgent):
     square_client: SquareClient
 
     def __init__(
@@ -17,7 +19,11 @@ class Conversation(VirtualAgent, Chat):
         self.square_client = SquareClient(from_num)
 
         super().__init__(
-            sp=system_prompt,
+            from_num=from_num,
+            forwarded_from_num=forwarded_from_num,
+            to_num=to_num,
+            call_sid=call_sid,
+            system_prompt=system_prompt,
             model="claude-haiku-4-5",
             tools=[
                 self.square_client.get_service_variations, SquareClient.get_current_time, self.create_booking, # related to creating bookings
@@ -33,26 +39,29 @@ class Conversation(VirtualAgent, Chat):
     def opening_line(self: Self):
         """
         Greeting and/or prompt for caller
-        Not included in chat history
-        Only intended to help caller start conversation with agent
-
-        This exists because both Anthropic and OpenAI APIs expect "user" messages to precede any "assistant" (agent) messages
+        Included in chat history
+        Intended to help caller start conversation with agent
         """
-        return (
-            "Hello! I can help you schedule appointments, list appointments, and cancel appointments."
-        )
+        agent_opening_line = "Hello! I can help you schedule appointments, list appointments, and cancel appointments."
 
-    def get_next_response(self, user_input: str) -> str:
-        """
-        Runs tool loop and returns LLM's latest text response
-        """
-        llm_responses = self.toolloop(user_input)
-        for llm_response in llm_responses:
-            print(f"llm_response ({type(llm_response)}): {llm_response}")
-        # print(list(llm_responses)) # exhaust the generator to run all tools and get to the final response
+        # NOTE: both Anthropic and OpenAI APIs expect "user" messages to precede any "assistant" (agent) messages
+        self.h = [
+            {
+                "role": "user",
+                "content": "",
+            },
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "text": agent_opening_line,
+                        "type": "text"
+                    }
+                ]
+            }
+        ]
 
-        response_for_user = llm_responses.value[-1]["content"][0]["text"]
-        return response_for_user
+        return agent_opening_line
 
     # adds documentation specific for tool calling
     def create_booking(
