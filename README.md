@@ -37,7 +37,7 @@ Set the HTTP method to POST.
 
 ```python
 import twiml_voice_agents as tva
-srvr = tva.Server(tva.Conversation)
+srvr = tva.Server(tva.SquareSchedulingAgent)
 srvr.run()
 ```
 
