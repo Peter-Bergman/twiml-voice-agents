@@ -27,6 +27,7 @@ class LLMAgent(VirtualAgent, Chat):
         )
         self.hang_up_route = hang_up_route
 
+    @VirtualAgent.timed
     def get_next_response(self: Self, user_input: str) -> str:
         """
         Runs tool loop and returns LLM's latest text response
@@ -41,6 +42,7 @@ class LLMAgent(VirtualAgent, Chat):
 
         return agent_response
 
+    @VirtualAgent.timed
     def handle_silence(self: Self) -> str | Record:
         self.non_replies_in_a_row += 1
 

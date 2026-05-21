@@ -5,10 +5,12 @@ from fastapi import FastAPI, Form
 from fastapi.responses import Response
 import os
 from pyngrok import ngrok
+import time
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from twilio.twiml import TwiML
 from typing import List, Self, Literal
 import uvicorn
+
 
 call_route = "/call"
 respond_route = "/respond"
@@ -63,6 +65,7 @@ class Server(FastAPI):
         async def respond(SpeechResult: str = Form(...), CallSid: str = Form(...)):
             print("SpeechResult:", SpeechResult)
             conversation: VirtualAgent = self.conversations[CallSid]
+
             agent_response = conversation.get_next_response(SpeechResult)
 
             response = self.build_voice_response_from_agent_response(agent_response)
@@ -90,7 +93,7 @@ class Server(FastAPI):
         if isinstance(agent_response, TwiML):
             response.append(agent_response)
         elif isinstance(agent_response, str):
-            gather = Gather(input="speech", language=self.language, action=respond_route, method="POST", speechTimeout="2", timeout="3")
+            gather = Gather(input="speech", language=self.language, action=respond_route, method="POST", speechTimeout="auto", timeout="3")
             gather.say(language=self.language, voice=self.voice).prosody(agent_response, rate=self.speech_rate)
             response.append(gather)
 

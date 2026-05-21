@@ -1,11 +1,22 @@
 from abc import ABC, abstractmethod
+import time
 from typing import Self
 from twilio.twiml import TwiML
 
 class VirtualAgent(ABC):
 
-    def __init__(self: Self, *args, **kwargs):
+    def __init__(self: Self, verbose: bool = False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def timed(func: function):
+        def wrapper(self, *args, **kwargs):
+            start = time.perf_counter()
+            result = func(self, *args, **kwargs)
+            elapsed = time.perf_counter() - start
+            print(f"{func.__qualname__} took {elapsed:.3f}s")
+            return result
+        return wrapper
 
     @property
     @abstractmethod
