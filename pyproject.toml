@@ -13,5 +13,6 @@ dependencies = [
     "fastapi[standard]",
     "squareup",
     "twilio",
-    "pyngrok"
+    "pyngrok",
+    "google-genai"
 ]
