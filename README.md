@@ -54,6 +54,6 @@ srvr = tva.Server(tva.SquareSchedulingAgent)
 srvr.run()
 ```
 
-## Taling to Agent, Finally
+## Talking to Agent, Finally
 
 Lastly, call the Twilio phone number you configured.
