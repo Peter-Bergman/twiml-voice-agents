@@ -4,7 +4,6 @@ import asyncio
 from fastapi import FastAPI, Form
 from fastapi.responses import Response
 import os
-from pyngrok import ngrok
 import time
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from twilio.twiml import TwiML
@@ -16,6 +15,8 @@ call_route = "/call"
 respond_route = "/respond"
 silence_route = "/handle_silence"
 hang_up_route = "/hang_up"
+use_ngrok = os.getenv("USE_NGROK", "").lower() in ("1", "t", "true", "y", "yes")
+print("use_ngrok", use_ngrok)
 
 class Server(FastAPI):
     conversations: List[VirtualAgent] = {}
@@ -101,9 +102,13 @@ class Server(FastAPI):
         return response
 
     async def run_async(self: Self):
-        ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
-        public_url = ngrok.connect(8000)
-        print(f"Public URL: {public_url}")
+        if use_ngrok:
+            from pyngrok import ngrok
+            ngrok_auth_token = os.getenv("NGROK_AUTHTOKEN")
+
+            ngrok.set_auth_token(ngrok_auth_token)
+            public_url = ngrok.connect(8000)
+            print(f"Public URL: {public_url}")
 
         config = uvicorn.Config(self, host="0.0.0.0", port=8000)
         server = uvicorn.Server(config)
