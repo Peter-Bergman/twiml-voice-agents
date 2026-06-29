@@ -1,0 +1,18 @@
+name: publish-workflow
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - run: pip install flit
+      - run: flit build
+      - uses: pypa/gh-action-pypi-publish@release/v1
