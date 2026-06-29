@@ -1,5 +1,18 @@
 # twiml-voice-agents
 
+# Why Use twiml-voice-agents
+
+Configuring an agent is fairly simple and easy.
+
+# Limitations
+
+The twiml-voice-agents package is limited by the fact that it supports half-duplex communication.
+
+Half-duplex means that both a caller and the agent can speak, but only one at a time.
+The caller can interrupt the agent (technical name for this is *barge-in*).
+However, due to the nature of TwiML apps, there is a time when caller input will be lost.
+That period begins when Twilio detects an end-of-turn for the caller and awaits a response from your twiml-voice-agents server.
+
 # Minimal Usage
 
 ## Installing
@@ -41,6 +54,6 @@ srvr = tva.Server(tva.SquareSchedulingAgent)
 srvr.run()
 ```
 
-## Using Agent, Finally
+## Taling to Agent, Finally
 
 Lastly, call the Twilio phone number you configured.
