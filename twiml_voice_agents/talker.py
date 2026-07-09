@@ -102,22 +102,22 @@ class Talker():
         )
 
     @staticmethod
-    def get_current_time() -> str:
+    def get_current_time(
+        tz_db_id: str = os.getenv("TZ", "America/Chicago") # timezone database identifier
+    ) -> str:
         """
-        Get the current time in a human-readable format.
+        Get the current time in a more human-readable format.
         """
 
-        tz_name = os.getenv("TZ", "America/Chicago") # default to Central Time if TZ env var not set
-        tz = ZoneInfo(tz_name)
+        tz = ZoneInfo(tz_db_id)
 
-        now = datetime.now(tz) # Get current time in the specified timezone
+        now = datetime.now(tz) # Get current time in local timezone
         current_time = now.strftime("%I:%M:%S %p %Z")  # Using 12-hour format with AM/PM
         current_date = now.strftime(
             "%A, %B %d, %Y"
-        )  # Full weekday, month name, day, and year
+        ) # Full weekday, month name, day, and year
 
-        current_time_message = f"Current Date and Time = {current_date}, {current_time}"
-        return current_time_message
+        return f"Current Date and Time = {current_date}, {current_time}"
 
     def forward_to_voicemail(self: Self, reason: Optional[str] = None):
         """

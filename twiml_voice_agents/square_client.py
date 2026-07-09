@@ -14,6 +14,8 @@ from square.types.search_catalog_items_response import SearchCatalogItemsRespons
 
 from typing import List, Self
 
+from zoneinfo import ZoneInfo
+
 SQUARE_ACCESS_TOKEN = os.getenv("SQUARE_ACCESS_TOKEN")
 
 class SquareClient(Square):
@@ -97,12 +99,16 @@ class SquareClient(Square):
         return create_customer_resp.customer
 
     @staticmethod
-    def get_current_time() -> str:
+    def get_current_time(
+        tz_db_id: str = os.getenv("TZ", "America/Chicago") # timezone database identifier
+    ) -> str:
         """
-        Get the current time in a more human-readable format.
+        Get the current time in a human-readable format.
         """
 
-        now = datetime.now(timezone.utc) # Get current time in local timezone
+        tz = ZoneInfo(tz_db_id)
+
+        now = datetime.now(tz) # Get current time in local timezone
         current_time = now.strftime("%I:%M:%S %p %Z")  # Using 12-hour format with AM/PM
         current_date = now.strftime(
             "%A, %B %d, %Y"
