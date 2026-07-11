@@ -1,12 +1,12 @@
 from .agent import VirtualAgent
-from .talker import Talker
+from .abstract_convo_manager import AbstractConvoManager
 import asyncio
 from fastapi import FastAPI, Form, Response, WebSocket, Request
 import json
 import os
 from twilio.request_validator import RequestValidator
 from twilio.twiml.voice_response import Connect, ConversationRelay, VoiceResponse
-from typing import Dict, Optional, Self, Callable, List
+from typing import Any, Dict, Optional, Self, Callable, List
 from urllib.parse import parse_qs
 import uvicorn
 
@@ -31,9 +31,9 @@ class ConversationRelayServer(FastAPI):
 
     def __init__(
         self,
-        voice_agent_type: type[Talker],
-        load_sys_instr: Callable[[str], str], # maps forwarded from phone number to client system instructions
-        model: str = "gemini-2.5-flash",
+        convo_manager_type: type[AbstractConvoManager],
+        convoManagerArgs: List[Any] = [],
+        convoManagerKwargs: Dict[str, Any] = {},
         #TODO: use params below
         language: str | None = None,
         voice: str | None = None,
@@ -41,11 +41,12 @@ class ConversationRelayServer(FastAPI):
         *args,
         **kwargs
     ):
-        self.model = model
+        self.convoManagerArgs = convoManagerArgs
+        self.convoManagerKwargs = convoManagerKwargs
+
         self.language = language
         self.voice = voice
         self.speech_rate = speech_rate
-        self.load_sys_instr = load_sys_instr
         super().__init__(*args, **kwargs)
 
         app = self # sticking to naming conventions
@@ -74,22 +75,21 @@ class ConversationRelayServer(FastAPI):
             setup_data = json.loads(setup_msg)
             print("setup_data", setup_data)
             call_sid = setup_data.get("callSid")
+            from_phone_number = setup_data.get("from")
             forwarded_from_phone_number = setup_data.get("forwardedFrom")
 
-            system_instructions = self.load_sys_instr(forwarded_from_phone_number)
-
-            #TODO: maybe make talker contextual var
-            talker: Talker = voice_agent_type(websocket.send_json, forwarded_from_phone_number, model=self.model, system_prompt=system_instructions)
+            #TODO: maybe make ConvoManager contextual var
+            convo_manager: AbstractConvoManager = convo_manager_type(websocket.send_json, from_phone_number, forwarded_from_phone_number, *self.convoManagerArgs, **self.convoManagerKwargs)
 
             # HACK: I would like to not have to encode fake Twilio data
-            await talker.handle_msg({"type": "prompt", "voicePrompt":""})
+            await convo_manager.handle_msg({"type": "prompt", "voicePrompt":""})
 
             while True:
                 #TODO: maybe replace with receive_json
                 msg = await websocket.receive_text()
                 msg_data = json.loads(msg)
                 print("msg_data", msg_data)
-                await talker.handle_msg(msg_data)
+                await convo_manager.handle_msg(msg_data)
 
         @app.post(on_conversation_relay_end_route)
         async def on_conversation_relay_end(request: Request):

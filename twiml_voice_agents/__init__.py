@@ -1,6 +1,7 @@
 """A FastAPI server that acts as a TwiML voice agent"""
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 __all__ = [
+    "AbstractConvoManager",
     "Server",
     "ConversationRelayServer",
     "VirtualAgent",
@@ -8,18 +9,22 @@ __all__ = [
     "SquareSchedulingAgent",
     "SquareClient",
     "Talker",
+    "TalkerConfig"
+    "TalkerReasonerConvoManager",
 ]
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .basic_server import Server
+    from .abstract_convo_manager import AbstractConvoManager
     from .cr_server import ConversationRelayServer
     from .agent import VirtualAgent
     from .llm_agent import LLMAgent
     from .square_scheduling_agent import SquareSchedulingAgent
     from .square_client import SquareClient
     from .talker import Talker
+    from .talker_reasoner_convo_manager import TalkerConfig, TalkerReasonerConvoManager
 else:
     def __getattr__(name):
         """
@@ -53,5 +58,17 @@ else:
         if name == "Talker":
             from .talker import Talker
             return Talker
+
+        if name == "AbstractConvoManager":
+            from .abstract_convo_manager import AbstractConvoManager
+            return AbstractConvoManager
+
+        if name == "TalkerConfig":
+            from .talker_reasoner_convo_manager import TalkerConfig
+            return TalkerConfig
+
+        if name == "TalkerReasonerConvoManager":
+            from .talker_reasoner_convo_manager import TalkerReasonerConvoManager
+            return TalkerReasonerConvoManager
 
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
