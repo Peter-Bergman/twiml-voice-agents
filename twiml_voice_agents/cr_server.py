@@ -55,11 +55,17 @@ class ConversationRelayServer(FastAPI):
         async def call(From: str = Form(...), ForwardedFrom: str | None = Form(None), To: str = Form(...), CallSid: str = Form(...)):
 
             response = VoiceResponse()
-            connect = Connect(action=f"https://{domain}{on_conversation_relay_end_route}")
-            connect.conversation_relay(
-                url=f"wss://{domain}{ws_route}",
-            )
-            response.append(connect)
+
+            override_call_handler_url = convo_manager_type.get_override_call_handler_url(ForwardedFrom)
+            print(f"override_call_handler_url {override_call_handler_url}")
+            if override_call_handler_url is None:
+                connect = Connect(action=f"https://{domain}{on_conversation_relay_end_route}")
+                connect.conversation_relay(
+                    url=f"wss://{domain}{ws_route}",
+                )
+                response.append(connect)
+            else:
+                response.redirect(override_call_handler_url)
 
             print(response)
             return Response(str(response), media_type="application/xml")

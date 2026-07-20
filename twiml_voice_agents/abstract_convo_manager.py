@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import asyncio
 import datetime
 import os
-from typing import Awaitable, Callable, Dict, Self
+from typing import Awaitable, Callable, Dict, Optional, Self
 from zoneinfo import ZoneInfo
 
 class AbstractConvoManager(ABC):
@@ -110,6 +110,17 @@ class AbstractConvoManager(ABC):
         > Conversation Relay sends this message when an error occurs during the session.
         """
         ...
+
+    @staticmethod
+    def get_override_call_handler_url(forwarded_from_phone_number: str) -> Optional[str]:
+        """
+        Used to determine if a call should be handled by a different server
+
+        Returns:
+            a URL str indicating where to Redirect (uses TwiML verb) callers, if a special handler is needed
+            None if a call should be handled normally
+        """
+        return None
 
     @staticmethod
     def get_current_time(
