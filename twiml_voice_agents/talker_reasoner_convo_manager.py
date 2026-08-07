@@ -9,6 +9,8 @@ import os
 from typing import Awaitable, Callable, Dict, List, Optional, Self
 from zoneinfo import ZoneInfo
 
+in_debug_mode = os.getenv("TVA_DEBUG") == "1"
+
 ToolList = List[Callable]
 
 @dataclass
@@ -54,19 +56,17 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         is_last_part_assistant = self.talker_history and self.talker_history[-1].role == "assistant"
         if not is_last_part_assistant:
             self.talker_history.append( types.Content(role="assistant", parts=[]) )
+            self.last_part_type = None
 
         if part.function_call:
             #NOTE: this code expects streamed function calls to be disabled
             self.talker_history[-1].parts.append(part)
             self.last_part_type = "function_call"
-        elif part.text and self.last_part_type == "text": # non-first consecutive text part
+        elif part.text is not None and self.last_part_type == "text": # non-first consecutive text part
             self.talker_history[-1].parts[-1].text += part.text
             self.last_part_type = "text"
-        elif part.text: # first consecutive text part
+        elif part.text is not None: # first consecutive text part
             self.talker_history[-1].parts.append(part)
-            self.last_part_type = "text"
-        elif part.text == "": # empty text part
-            print("Received empty text part from LLM, skipping adding to talker history")
             self.last_part_type = "text"
         else:
             self.talker_history[-1].parts.append(part)
@@ -103,12 +103,6 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
                 for part in candidate.content.parts:
                     # Check for the tool call here
                     if part.function_call:
-                        print(f"Received function call from LLM: {part}")
-                        function_name = part.function_call.name
-                        function_arguments = part.function_call.args
-                        function_call_id = part.function_call.id
-                        print(f"Function name: {function_name}")
-                        print(f"Function arguments: {function_arguments}")
                         self.function_calling_task = asyncio.create_task( self.dispatch_function_call(part) )
 
                         # breaking because function call already added (and hopefully function response via dispatch_function_call)
@@ -129,11 +123,12 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
 
             print(f"Full agent response: {self.talker_history[-1]}")
         except asyncio.CancelledError as cancelledError:
+            if in_debug_mode == "1": breakpoint()
             print(cancelledError)
             raise
         except Exception as e:
+            if in_debug_mode == "1": breakpoint()
             print(e)
-            if os.getenv("TVA_DEBUG") == "1": breakpoint()
             raise
 
     async def dispatch_function_call(self: Self, function_call_part: types.Part) -> None:
@@ -146,6 +141,9 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         function_arguments: dict = function_call_part.function_call.args
         function_call_id: Optional[str] = function_call_part.function_call.id
 
+        print(f"Function name: {function_name}")
+        print(f"Function arguments: {function_arguments}")
+
         # add function call to talker history
         self.add_assistant_part_to_talker_history(function_call_part)
 
@@ -157,6 +155,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             else:
                 result = function_to_call(**function_arguments)
         except asyncio.CancelledError as cancelledError:
+            if in_debug_mode == "1": breakpoint()
             # log cancellation message if exists
             if cancelledError.args: print(cancelledError)
             self.add_function_response_to_talker_history(function_name, {"error": "Cancelled/Interrupted"}, function_call_id)
@@ -215,6 +214,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             try:
                 await self.function_calling_task
             except asyncio.CancelledError:
+                if in_debug_mode == "1": breakpoint()
                 print("Function calling task cancelled due to interruption from caller")
             self.function_calling_task = None
         elif log_msg_if_no_function_call:
@@ -226,6 +226,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             try:
                 await self.streaming_task
             except asyncio.CancelledError:
+                if in_debug_mode == "1": breakpoint()
                 print("Streaming task cancelled due to interruption from caller")
             self.streaming_task = None
         elif log_message_if_no_streaming_task:

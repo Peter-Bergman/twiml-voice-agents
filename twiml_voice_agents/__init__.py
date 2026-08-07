@@ -1,5 +1,5 @@
 """A FastAPI server that acts as a TwiML voice agent"""
-__version__ = "0.1.13"
+__version__ = "0.1.14"
 __all__ = [
     "AbstractConvoManager",
     "Server",
