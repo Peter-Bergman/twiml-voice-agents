@@ -153,9 +153,9 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             # look up function to dispatch
             function_to_call = [ tool for tool in self.talker_tools if tool.__name__ == function_name ][0]
             if inspect.iscoroutinefunction(function_to_call):
-                response = await function_to_call(**function_arguments)
+                result = await function_to_call(**function_arguments)
             else:
-                response = function_to_call(**function_arguments)
+                result = function_to_call(**function_arguments)
         except asyncio.CancelledError as cancelledError:
             # log cancellation message if exists
             if cancelledError.args: print(cancelledError)
@@ -165,14 +165,14 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             raise
 
         # add function response to talker history
-        self.add_function_response_to_talker_history(function_name, response, function_call_id)
+        self.add_function_response_to_talker_history(function_name, {"result": result}, function_call_id)
 
         async with self.lock:
             # wait for streaming task to finish cleaning up, if needed
             if self.streaming_task is not None: await self.streaming_task
             self.streaming_task = asyncio.create_task( self.stream_talker_response_to_caller() )
 
-        return response
+        return
 
     def add_function_response_to_talker_history(self: Self, function_name: str, response: dict, function_call_id: Optional[str]) -> None:
         """
