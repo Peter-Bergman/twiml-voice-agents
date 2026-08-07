@@ -167,9 +167,10 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         # add function response to talker history
         self.add_function_response_to_talker_history(function_name, response, function_call_id)
 
-        # wait for streaming task to finish cleaning up, if needed
-        if self.streaming_task is not None: asyncio.wait(self.streaming_task)
-        self.streaming_task = asyncio.create_task( self.stream_talker_response_to_caller() )
+        async with self.lock:
+            # wait for streaming task to finish cleaning up, if needed
+            if self.streaming_task is not None: await self.streaming_task
+            self.streaming_task = asyncio.create_task( self.stream_talker_response_to_caller() )
 
         return response
 
@@ -258,7 +259,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         print(f"utteranceUntilInterrupt: {utteranceUntilInterrupt}")
         print(f"durationUntilInterruptMs: {durationUntilInterruptMs}")
         async with self.lock:
-            await self.cancel_streaming_task("WARNING: Received interrupt message, but no streaming task was active.")
+            await self.cancel_streaming_task("INFO: Received interrupt message, but no streaming task was active.")
 
             indexed_parts_in_last_response = enumerate(self.talker_history[-1].parts)
             indexed_text_parts_in_last_response = [ (index, part) for index, part in indexed_parts_in_last_response if part.text ]
