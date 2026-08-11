@@ -6,6 +6,7 @@ from google import genai
 from google.genai import types
 import inspect
 import os
+import time
 from typing import Awaitable, Callable, Dict, List, Optional, Self
 from zoneinfo import ZoneInfo
 
@@ -148,12 +149,17 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         self.add_assistant_part_to_talker_history(function_call_part)
 
         try:
+            start = time.perf_counter()
+
             # look up function to dispatch
             function_to_call = [ tool for tool in self.talker_tools if tool.__name__ == function_name ][0]
             if inspect.iscoroutinefunction(function_to_call):
                 result = await function_to_call(**function_arguments)
             else:
                 result = function_to_call(**function_arguments)
+
+            end = time.perf_counter()
+            print(f"Time elapsed during {function_name} function call: {end - start}")
         except asyncio.CancelledError as cancelledError:
             if in_debug_mode == "1": breakpoint()
             # log cancellation message if exists
