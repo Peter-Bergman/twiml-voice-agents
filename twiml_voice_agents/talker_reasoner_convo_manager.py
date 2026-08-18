@@ -305,6 +305,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             model=model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instructions,
+                temperature=0,
                 thinking_config=types.ThinkingConfig(thinking_budget=0), # indicates "reasoning" not allowed before generating response
                 tools=tools
             )
