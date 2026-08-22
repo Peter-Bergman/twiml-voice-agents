@@ -60,14 +60,11 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             self.talker_history.append( types.Content(role="assistant", parts=[]) )
             self.last_part_type = None
 
-        if part.function_call and self.last_part_type == "function_call":
+        if part.function_call:
             #NOTE: this code expects streamed function calls to be disabled
-            part.thought_signature = part.thought_signature if part.thought_signature is not None else (breakpoint() and self.last_thought_signature)
-            self.talker_history[-1].parts.append(part)
-            self.last_thought_signature = part.thought_signature
-            self.last_part_type = "function_call"
-        elif part.function_call:
-            #NOTE: this code expects streamed function calls to be disabled
+            if part.thought_signature is None:
+                print(f"Setting missing thought_signature to {self.last_thought_signature}")
+                part.thought_signature = self.last_thought_signature
             self.talker_history[-1].parts.append(part)
             self.last_thought_signature = part.thought_signature
             self.last_part_type = "function_call"
