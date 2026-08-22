@@ -44,6 +44,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         self.streaming_task: Optional[asyncio.Task] = None
         #NOTE: the `self.streaming_task` has exclusive access to create `self.function_calling_task`
         self.function_calling_task: Optional[asyncio.Task] = None
+        self.last_thought_signature = None
 
         self.talker_config = talker_config
         self.talker_tools = talker_config.tools + ([self.forward_to_voicemail] if talker_config.enable_forward_to_voicemail_tool else [])
@@ -59,9 +60,16 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             self.talker_history.append( types.Content(role="assistant", parts=[]) )
             self.last_part_type = None
 
-        if part.function_call:
+        if part.function_call and self.last_part_type == "function_call":
+            #NOTE: this code expects streamed function calls to be disabled
+            part.thought_signature = part.thought_signature if part.thought_signature is not None else (breakpoint() and self.last_thought_signature)
+            self.talker_history[-1].parts.append(part)
+            self.last_thought_signature = part.thought_signature
+            self.last_part_type = "function_call"
+        elif part.function_call:
             #NOTE: this code expects streamed function calls to be disabled
             self.talker_history[-1].parts.append(part)
+            self.last_thought_signature = part.thought_signature
             self.last_part_type = "function_call"
         elif part.text is not None and self.last_part_type == "text": # non-first consecutive text part
             self.talker_history[-1].parts[-1].text += part.text
