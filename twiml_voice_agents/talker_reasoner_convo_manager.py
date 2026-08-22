@@ -124,11 +124,11 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
 
             print(f"Full agent response: {self.talker_history[-1]}")
         except asyncio.CancelledError as cancelledError:
-            if in_debug_mode == "1": breakpoint()
+            if in_debug_mode: breakpoint()
             print(cancelledError)
             raise
         except Exception as e:
-            if in_debug_mode == "1": breakpoint()
+            if in_debug_mode: breakpoint()
             print(e)
             raise
 
@@ -161,7 +161,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             end = time.perf_counter()
             print(f"Time elapsed during {function_name} function call: {end - start}")
         except asyncio.CancelledError as cancelledError:
-            if in_debug_mode == "1": breakpoint()
+            if in_debug_mode: breakpoint()
             # log cancellation message if exists
             if cancelledError.args: print(cancelledError)
             self.add_function_response_to_talker_history(function_name, {"error": "Cancelled/Interrupted"}, function_call_id)
@@ -220,7 +220,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             try:
                 await self.function_calling_task
             except asyncio.CancelledError:
-                if in_debug_mode == "1": breakpoint()
+                if in_debug_mode: breakpoint()
                 print("Function calling task cancelled due to interruption from caller")
             self.function_calling_task = None
         elif log_msg_if_no_function_call:
@@ -232,7 +232,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             try:
                 await self.streaming_task
             except asyncio.CancelledError:
-                if in_debug_mode == "1": breakpoint()
+                if in_debug_mode: breakpoint()
                 print("Streaming task cancelled due to interruption from caller")
             self.streaming_task = None
         elif log_message_if_no_streaming_task:

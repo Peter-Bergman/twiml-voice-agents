@@ -30,7 +30,7 @@ class ConversationRelayServer(FastAPI):
     twilio_signature_validator = RequestValidator(twilio_auth_token)
 
     def __init__(
-        self,
+        self: Self,
         convo_manager_type: type[AbstractConvoManager],
         convoManagerArgs: List[Any] = [],
         convoManagerKwargs: Dict[str, Any] = {},
