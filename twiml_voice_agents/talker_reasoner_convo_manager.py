@@ -137,6 +137,12 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
             print(e)
             raise
 
+    async def give_assurance_if_applicable(self: Self, function_to_call: Callable):
+        maybe_assurance_msg = getattr(function_to_call, "assurance_msg", None)
+        if isinstance(maybe_assurance_msg, str):
+            #self.add_assistant_part_to_talker_history( types.Part(text=maybe_assurance_msg) )
+            await self.send_msg_chunk_to_caller(maybe_assurance_msg, True)
+
     async def dispatch_function_call(self: Self, function_call_part: types.Part) -> None:
         """
         Dispatch function call to appropriate tool
@@ -150,14 +156,16 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
         print(f"Function name: {function_name}")
         print(f"Function arguments: {function_arguments}")
 
-        # add function call to talker history
-        self.add_assistant_part_to_talker_history(function_call_part)
+        # look up function to dispatch
+        function_to_call = [ tool for tool in self.talker_tools if tool.__name__ == function_name ][0]
 
         try:
+            await self.give_assurance_if_applicable(function_to_call)
+            # add function call to talker history
+            self.add_assistant_part_to_talker_history(function_call_part)
+
             start = time.perf_counter()
 
-            # look up function to dispatch
-            function_to_call = [ tool for tool in self.talker_tools if tool.__name__ == function_name ][0]
             if inspect.iscoroutinefunction(function_to_call):
                 result = await function_to_call(**function_arguments)
             else:
