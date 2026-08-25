@@ -139,6 +139,7 @@ class TalkerReasonerConvoManager(AbstractConvoManager):
 
     async def give_assurance_if_applicable(self: Self, function_to_call: Callable):
         maybe_assurance_msg = getattr(function_to_call, "assurance_msg", None)
+        print(f"Assurance message: {maybe_assurance_msg}")
         if isinstance(maybe_assurance_msg, str):
             #self.add_assistant_part_to_talker_history( types.Part(text=maybe_assurance_msg) )
             await self.send_msg_chunk_to_caller(maybe_assurance_msg, True)
