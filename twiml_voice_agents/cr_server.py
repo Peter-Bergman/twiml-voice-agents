@@ -34,6 +34,7 @@ class ConversationRelayServer(FastAPI):
         convo_manager_type: type[AbstractConvoManager],
         convoManagerArgs: List[Any] = [],
         convoManagerKwargs: Dict[str, Any] = {},
+        skip_twilio_signature_validation: bool = False,
         #TODO: use params below
         language: str | None = None,
         voice: str | None = None,
@@ -43,6 +44,8 @@ class ConversationRelayServer(FastAPI):
     ):
         self.convoManagerArgs = convoManagerArgs
         self.convoManagerKwargs = convoManagerKwargs
+
+        self.skip_twilio_signature_validation: bool = skip_twilio_signature_validation
 
         self.language = language
         self.voice = voice
@@ -151,4 +154,4 @@ class ConversationRelayServer(FastAPI):
         print("signature", signature)
         print("url", url)
         url = url.replace("ws://", "wss://") # for handling requests forwarded from CloudFront
-        return self.twilio_signature_validator.validate(url, params, signature)
+        return self.skip_twilio_signature_validation or self.twilio_signature_validator.validate(url, params, signature)
